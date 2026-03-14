@@ -1,82 +1,103 @@
 /**
  * ZACAR-E-CA · Phase V — GEVURAH (The Judgment of Fire)
  * 
- * The strobe of the Ophanim. The initiate's mortal coil is stripped.
- * Trial: Hold [SPACE] to endure the gaze of the wheels.
+ * Raymarching Ophanim Shader. 
+ * Hostile OS mode: Direct visual pressure, no instructions.
  */
 
+import * as THREE from 'three';
 import { gsap } from 'gsap';
-import { translate } from '../core/enochian.js';
+import { logAetheris } from '../core/enochian.js';
 
+let scene, camera, mesh, material;
 let timer = 0;
 const DURATION = 30;
 let complete = false;
 let isHoldingSpace = false;
-let overlay, angleContainer;
+let timeScale = 1.0;
+
+const vertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const fragmentShader = `
+  uniform float uTime;
+  uniform float uIntensity;
+  uniform vec2 uResolution;
+  varying vec2 vUv;
+
+  float sdTorus( vec3 p, vec2 t ) {
+    vec2 q = vec2(length(p.xz)-t.x,p.y);
+    return length(q)-t.y;
+  }
+
+  void main() {
+    vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.y, uResolution.x);
+    vec3 ro = vec3(0.0, 0.0, 5.0);
+    vec3 rd = normalize(vec3(uv, -1.0));
+    
+    float t = 0.0;
+    float d = 0.0;
+    vec3 p;
+    
+    for(int i = 0; i < 64; i++) {
+      p = ro + rd * t;
+      float d1 = sdTorus(p, vec2(1.5, 0.02));
+      
+      // Rotating inner rings
+      mat3 rotX = mat3(1, 0, 0, 0, cos(uTime), -sin(uTime), 0, sin(uTime), cos(uTime));
+      mat3 rotY = mat3(cos(uTime*1.5), 0, sin(uTime*1.5), 0, 1, 0, -sin(uTime*1.5), 0, cos(uTime*1.5));
+      float d2 = sdTorus(rotX * rotY * p, vec2(1.2, 0.015));
+      float d3 = sdTorus(rotY * rotX * p, vec2(0.9, 0.01));
+      
+      d = min(d1, min(d2, d3));
+      if(d < 0.001 || t > 10.0) break;
+      t += d;
+    }
+
+    vec3 col = vec3(0.0);
+    if(t < 10.0) {
+      float glow = exp(-d * 10.0) * uIntensity;
+      col = vec3(1.0, 0.2, 0.0) * glow;
+      col += vec3(1.0, 0.8, 0.0) * pow(glow, 2.0);
+    }
+    
+    // Noise/Flicker
+    col *= 0.8 + 0.2 * sin(uTime * 100.0);
+    
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
 
 function onEnter(engine) {
-  timer = 0;
   complete = false;
+  timer = 0;
   isHoldingSpace = false;
+  timeScale = 1.0;
 
-  engine.audio.setDroneLevel(0.6);
-  engine.audio.setWhisperLevel(0.2);
+  scene = new THREE.Scene();
+  camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+  camera.position.z = 1;
 
-  const infoLines = [
-    `${translate("USER AGENT")}: ${navigator.userAgent.substring(0, 30)}...`,
-    `${translate("LOCUS")}: ${window.location.origin}`,
-    `${translate("ID")}: 0x${(Math.random() * 0xFFFFFF << 0).toString(16).toUpperCase()}`,
-    `${translate("STATUS")}: ${translate("CAPTURED")}`,
-    `${translate("VERITAS")}: ${translate("INEVITABILIS")}`
-  ];
+  material = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms: {
+      uTime: { value: 0 },
+      uIntensity: { value: 1.0 },
+      uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+    }
+  });
 
-  engine.overlay.innerHTML = `
-    <div id="l5-gevurah" style="
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    ">
-      <div id="l5-strobe" style="position:fixed; top:0; left:0; width:100%; height:100%; background:red; z-index:-1; opacity:0;"></div>
-      
-      <div id="l5-dox" style="
-        font-family: var(--font-mono);
-        color: var(--bone);
-        font-size: 0.7rem;
-        border: 1px solid var(--blood);
-        padding: 20px;
-        background: rgba(139, 0, 0, 0.1);
-        z-index: 10;
-        text-align: center;
-      ">
-        <div style="color:red; font-weight:bold; margin-bottom: 10px;">[ ${translate("IUDICIUM")} ]</div>
-        ${infoLines.join('<br>')}
-      </div>
+  mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  scene.add(mesh);
 
-      <div id="l5-title" style="position:fixed; top:10%; width:100%; text-align:center; font-family:var(--font-serif); font-size:4rem; color:var(--blood); pointer-events:none; z-index:100;">${translate("GEVURAH")}</div>
-      <div id="l5-ophanim" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
-
-      <div id="l5-hint" style="
-        margin-top: 50px;
-        font-family: var(--font-serif);
-        font-size: 1.5rem;
-        color: var(--blood);
-        animation: pulse 1s infinite;
-      ">⸸ ${translate("TENE SPATIUM")} ⸸</div>
-
-      <div id="l5-progress" style="margin-top:20px; width:200px; height:2px; background:#333;">
-        <div id="l5-bar" style="height:100%; width:0%; background:red;"></div>
-      </div>
-    </div>
-  `;
-
-  overlay = document.getElementById('l5-gevurah');
-  angleContainer = document.getElementById('l5-ophanim');
+  engine.renderer.setActive(scene, camera);
+  engine.overlay.innerHTML = ''; // Kill friendly UI
 
   this._onKeyDown = (e) => {
     if (e.code === 'Space') isHoldingSpace = true;
@@ -88,52 +109,29 @@ function onEnter(engine) {
   window.addEventListener('keydown', this._onKeyDown);
   window.addEventListener('keyup', this._onKeyUp);
 
-  for(let i=0; i<5; i++) _spawnOphanim();
-}
-
-function _spawnOphanim() {
-  const div = document.createElement('div');
-  div.style.cssText = `
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    border: 4px double red;
-    border-radius: 50%;
-    left: ${Math.random() * 100}%;
-    top: ${Math.random() * 100}%;
-    opacity: 0.3;
-    animation: rotate ${1 + Math.random() * 2}s linear infinite;
-  `;
-  const ring2 = div.cloneNode();
-  ring2.style.width = '150px';
-  ring2.style.height = '150px';
-  ring2.style.animationDirection = 'reverse';
-  div.appendChild(ring2);
-  angleContainer.appendChild(div);
+  logAetheris('warn', "CORE_VOLTAGE_SPIKE: Ophanim detection failure. Stabilize ritual via SPACE bypass.");
 }
 
 function onUpdate(engine, dt) {
   if (complete) return;
-  const strobe = document.getElementById('l5-strobe');
-  if (strobe) {
-    strobe.style.opacity = (Math.random() > 0.8) ? (isHoldingSpace ? 0.3 : 1) : 0;
-  }
 
   if (isHoldingSpace) {
+    timeScale = gsap.utils.interpolate(timeScale, 10.0, 0.1);
     timer += dt;
-    gsap.to(overlay, { 
-      x: (Math.random() - 0.5) * 10, 
-      y: (Math.random() - 0.5) * 10, 
-      duration: 0.05 
-    });
+    engine.audio.setDroneLevel(0.8);
+    engine.audio.setAnxiety(0.9);
+    engine.setRitualIntensity(0.1, 0.5);
   } else {
-    timer -= dt * 2;
+    timeScale = gsap.utils.interpolate(timeScale, 1.0, 0.05);
+    timer -= dt * 0.5;
     if (timer < 0) timer = 0;
-    gsap.set(overlay, { x: 0, y: 0 });
+    engine.audio.setDroneLevel(0.4);
+    engine.audio.setAnxiety(0.3);
+    engine.setRitualIntensity(0.01, 0.1);
   }
 
-  const bar = document.getElementById('l5-bar');
-  if (bar) bar.style.width = `${(timer / DURATION) * 100}%`;
+  material.uniforms.uTime.value += dt * timeScale;
+  material.uniforms.uIntensity.value = 1.0 + (timer / DURATION) * 5.0;
 
   if (timer >= DURATION) {
     complete = true;
@@ -142,9 +140,10 @@ function onUpdate(engine, dt) {
 }
 
 function _onComplete() {
-  gsap.to(overlay, { 
-    opacity: 0, 
-    duration: 3, 
+  logAetheris('liturgy');
+  gsap.to(material.uniforms.uIntensity, { 
+    value: 100, 
+    duration: 2, 
     onComplete: () => {
       if (onComplete) onComplete();
     }
@@ -155,6 +154,10 @@ function onExit(engine) {
   window.removeEventListener('keydown', this._onKeyDown);
   window.removeEventListener('keyup', this._onKeyUp);
   engine.overlay.innerHTML = '';
+  if (mesh) {
+    mesh.geometry.dispose();
+    mesh.material.dispose();
+  }
 }
 
 let onComplete = null;

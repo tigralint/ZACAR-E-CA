@@ -1,138 +1,109 @@
 /**
- * ZACAR-E-CA · Phase III — HOD (The Splendor of Silence)
+ * ZACAR-E-CA · Phase III — HOD (The Silent Surrender)
  * 
- * The terminal of reason. Authentication is required.
+ * Hostile Terminal: Rejecting the user's mind.
+ * Victory condition: Absolute stillness for 40 seconds.
  */
-import { gsap } from 'gsap';
-import { translate } from '../core/enochian.js';
 
+import { gsap } from 'gsap';
+import { logAetheris, translate } from '../core/enochian.js';
+
+let complete = false;
 let timer = 0;
 const WIN_TIME = 40;
-let complete = false;
-let terminalEl;
-let progressEl;
-let authenticated = false;
-let lastActionTime = 0;
+let overlay;
+let lastMoveTime = 0;
 
 function onEnter(engine) {
-  timer = 0;
   complete = false;
-  authenticated = false;
-  lastActionTime = Date.now();
+  timer = 0;
+  lastMoveTime = Date.now();
 
-  engine.audio.setDroneLevel(0.1);
-  engine.audio.setWhisperLevel(0.02);
+  engine.audio.setDroneLevel(0.5);
+  engine.audio.setWhisperLevel(0.6);
 
   engine.overlay.innerHTML = `
     <div id="l3-hod" style="
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
-      background: #050505;
-      color: #00ff00;
+      background: #110000;
+      color: #ff0000;
       font-family: var(--font-mono);
+      display: flex;
+      flex-direction: column;
       padding: 40px;
-      overflow: hidden;
     ">
-      <div id="l3-terminal" style="
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 600px;
-        height: 400px;
-        background: rgba(0, 20, 0, 0.9);
-        border: 2px solid #00ff00;
-        padding: 20px;
-        box-shadow: 0 0 50px rgba(0, 255, 0, 0.1);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      ">
-        <div id="l3-header">${translate("CURIALIS")}: Identificatio requiritur.</div>
-        <div id="l3-sub">${translate("TENEBRIS")}: Insere signum secretum...</div>
-        <div style="margin-top: 10px;">
-          > <input type="text" id="l3-pass" autocomplete="off" style="background:transparent; border:none; border-bottom:1px solid #00ff00; color:#00ff00; outline:none; font-family:inherit; width: 200px;">
-        </div>
-        <div id="l3-log" style="margin-top: 20px; font-size: 0.8rem; opacity: 0.7; height: 100px; overflow-y: auto;"></div>
-        <div id="l3-progress-container" style="width: 100%; height: 2px; background: #003300; margin-top: auto; display: none;">
-          <div id="l3-progress-bar" style="width: 0%; height: 100%; background: #00ff00;"></div>
-        </div>
+      <div id="l3-terminal" style="font-size: 0.9rem; line-height: 1.4;">
+        > AETHERIS_OS v.7.2.1 [HOD_NODE]<br>
+        > AUTHENTICATING VESSEL...<br>
+        > ERROR: MORTAL_MIND_DETECTION_OVERFLOW<br>
+        > WAITING FOR SURRENDER...
+      </div>
+      <div id="l3-input-line" style="margin-top: 20px;">
+        <span style="color: grey;">user@void:~$</span> <span id="l3-cursor" style="background: red;">&nbsp;</span>
       </div>
     </div>
   `;
 
-  terminalEl = document.getElementById('l3-terminal');
-  const passInput = document.getElementById('l3-pass');
-  const log = document.getElementById('l3-log');
-  progressEl = document.getElementById('l3-progress-bar');
-  const progressContainer = document.getElementById('l3-progress-container');
-
-  passInput.focus();
-  passInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      const val = passInput.value.trim().toUpperCase();
-      if (val === 'ABSCONDITUS') {
-        authenticated = true;
-        passInput.style.display = 'none';
-        document.getElementById('l3-header').innerText = translate("AUTHENTICATED");
-        document.getElementById('l3-sub').innerText = translate("STAY STILL");
-        progressContainer.style.display = 'block';
-        lastActionTime = Date.now();
-        log.innerHTML += `> ${translate("ACCESS GRANTED")}...<br>`;
-      } else {
-        log.innerHTML += `> <span style="color:red;">${translate("INVALID")}</span>...<br>`;
-        _triggerGlitch(engine);
-      }
-      passInput.value = '';
+  overlay = document.getElementById('l3-hod');
+  
+  this._onKeyDown = (e) => {
+    _onPanic(engine);
+  };
+  this._onMouseMove = (e) => {
+    if (Math.abs(e.movementX) > 2 || Math.abs(e.movementY) > 2) {
+       _onPanic(engine);
     }
-  });
-
-  this._onInput = (e) => {
-    if (!authenticated || complete) return;
-    timer = 0;
-    _triggerGlitch(engine);
   };
 
-  window.addEventListener('keydown', this._onInput);
-  window.addEventListener('mousemove', this._onInput);
+  window.addEventListener('keydown', this._onKeyDown);
+  window.addEventListener('mousemove', this._onMouseMove);
+
+  logAetheris('error', "IDENTITY_LOCKOUT: Resistance is counter-productive. Abandon will.");
 }
 
-function _triggerGlitch(engine) {
-  gsap.fromTo(terminalEl, 
-    { x: '+=5', y: '+=5' }, 
-    { x: '-=10', y: '-=10', duration: 0.05, repeat: 5, yoyo: true, onComplete: () => {
-      terminalEl.style.transform = 'translate(-50%, -50%)';
-    }}
-  );
-  engine.setAnxiety(0.8);
-  setTimeout(() => engine.setAnxiety(0), 200);
+function _onPanic(engine) {
+  if (complete) return;
+  timer = 0;
+  lastMoveTime = Date.now();
+  
+  // Flash red, screech
+  gsap.fromTo(overlay, { background: 'red' }, { background: '#110000', duration: 0.5 });
+  logAetheris('error', "MORTAL_MIND_REJECTED: Signal reset.");
+  
+  const terminal = document.getElementById('l3-terminal');
+  if (terminal) {
+    const p = document.createElement('div');
+    p.style.color = 'white';
+    p.innerText = `> ${translate("ACCESS_DENIED")}`;
+    terminal.appendChild(p);
+    if (terminal.childNodes.length > 20) terminal.removeChild(terminal.firstChild);
+  }
 }
 
 function onUpdate(engine, dt) {
-  if (!authenticated || complete) return;
+  if (complete) return;
 
   timer += dt;
-  const progressPercent = (timer / WIN_TIME) * 100;
   
-  if (progressEl) {
-    progressEl.style.width = `${Math.min(100, progressPercent)}%`;
+  // Visual feedback: darkening the screen as they succeed
+  const progress = Math.min(1.0, timer / WIN_TIME);
+  if (overlay) {
+    overlay.style.opacity = 1.0 - progress * 0.5;
   }
 
   if (timer >= WIN_TIME) {
     complete = true;
-    _onFinalized();
+    _onComplete();
   }
 }
 
-function _onFinalized() {
-  const log = document.getElementById('l3-log');
-  if (log) log.innerHTML += `<br><span style="color:white;">${translate("ACCEPTED")}</span>`;
-  
-  gsap.to(terminalEl, { 
-    scale: 0, 
+function _onComplete() {
+  logAetheris('liturgy');
+  gsap.to(overlay, { 
     opacity: 0, 
-    duration: 1.5, 
-    delay: 1, 
+    duration: 3, 
     onComplete: () => {
       if (onComplete) onComplete();
     }
@@ -140,8 +111,8 @@ function _onFinalized() {
 }
 
 function onExit(engine) {
-  window.removeEventListener('keydown', this._onInput);
-  window.removeEventListener('mousemove', this._onInput);
+  window.removeEventListener('keydown', this._onKeyDown);
+  window.removeEventListener('mousemove', this._onMouseMove);
   engine.overlay.innerHTML = '';
 }
 

@@ -1,162 +1,109 @@
 /**
- * ZACAR-E-CA · Phase VI — TIFERET (The Beauty of the Sacrifice)
+ * ZACAR-E-CA · Phase VI — TIFERET (The Sacrifice of the Ego)
  * 
- * The Mandala of the Ego. To pass, the initiate must erase themselves.
- * 
- * Trials:
- * 1. Delete the DOM node <div id="ego"> from the target memory.
- * 2. Purge the global soul: set 'window._recalc_soul' to 0 in the terminal.
+ * The mirror of beauty and sacrifice. 
+ * Hostile OS mode: No UI. Hints hidden in the kernel console.
  */
 
-import * as THREE from 'three';
 import { gsap } from 'gsap';
-import { translate } from '../core/enochian.js';
+import { logAetheris } from '../core/enochian.js';
 
-let scene, camera, mandalaGroup;
 let complete = false;
-let observer;
-let elapsedTime = 0;
+let overlay;
+let mandala;
+let egoInstance = null;
+let fakeFetchTimer = 0;
 
 function onEnter(engine) {
   complete = false;
-  elapsedTime = 0;
-  window._recalc_soul = 1.0; 
-  
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x050505);
+  fakeFetchTimer = 0;
 
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.z = 15;
+  engine.audio.setDroneLevel(0.6);
+  engine.audio.setWhisperLevel(0.3);
 
-  _createMandala();
-
-  engine.renderer.setActive(scene, camera);
-
+  // Black void, no UI text
   engine.overlay.innerHTML = `
     <div id="l6-tiferet" style="
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
+      background: #000;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      pointer-events: none;
+      overflow: hidden;
     ">
-      <div id="l6-title" class="glitch level-text--large" data-text="T I F E R E T" style="
-        font-family: var(--font-serif);
-        color: gold;
-        opacity: 0.8;
-      ">${translate("TIFERET")}</div>
-      
-      <div id="l6-instruction" style="
-        margin-top: 2rem;
-        font-family: var(--font-mono);
-        font-size: 1rem;
-        color: var(--bone);
-        letter-spacing: 0.3em;
-        opacity: 0.6;
-        text-shadow: 0 0 10px gold;
-      ">${translate("FAC SACRIFICIUM EGO TUI")}</div>
-      <div style="
-        position: absolute; bottom: 10%; font-family: var(--font-mono); font-size: 0.6rem;
-        color: rgba(255, 215, 0, 0.2); text-align: center;
-      ">"NAM QUI VOLUERIT ANIMAM SUAM SALVAM FACERE PERDET EAM..." [F12]</div>
+      <div id="l6-mandala" style="
+        width: 300px;
+        height: 300px;
+        border: 2px solid var(--gold);
+        border-radius: 50%;
+        box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
+        opacity: 0.1;
+        transform: rotate(0deg);
+      "></div>
     </div>
   `;
 
-  // Make the #ego node available for this level
-  const egoNode = document.getElementById('ego');
-  if (egoNode) {
-    egoNode.style.display = 'block';
-  }
+  overlay = document.getElementById('l6-tiferet');
+  mandala = document.getElementById('l6-mandala');
 
-  observer = new MutationObserver((mutations) => {
-    const isEgoGone = !document.getElementById('ego');
-    if (isEgoGone && (window._recalc_soul === 0) && !complete) {
-      complete = true;
-      _onSacrificeMade(engine);
-    }
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-}
-
-function _createMandala() {
-  mandalaGroup = new THREE.Group();
-  scene.add(mandalaGroup);
-
-  const geometry = new THREE.TorusKnotGeometry(4, 0.1, 200, 32, 2, 3);
-  const material = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true });
+  // Kernel Hint
+  logAetheris('error', "ENTITY_EGO_CORRUPTION: Holy memory space compromised by <div id='ego'>.");
+  logAetheris('warn', "Manual DOM purge required to restore sanctity.");
   
-  for (let i = 0; i < 8; i++) {
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.rotation.z = (Math.PI / 4) * i;
-    mandalaGroup.add(mesh);
-  }
-
-  const ball = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 32, 32),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true })
-  );
-  scene.add(ball);
+  // Ensure the ego node exists (it should be in index.html, but let's ensure it's visible to the inspector)
+  egoInstance = document.getElementById('ego');
+  if (egoInstance) egoInstance.style.display = 'block';
 }
 
 function onUpdate(engine, dt) {
   if (complete) return;
-  elapsedTime += dt;
 
-  if (mandalaGroup) {
-    mandalaGroup.rotation.z += dt * 0.2;
-    mandalaGroup.scale.setScalar(1 + Math.sin(elapsedTime) * 0.05);
-    
-    const anxiety = Math.min(1, elapsedTime / 120);
-    engine.setAnxiety(anxiety);
-    engine.setRitualIntensity(0.002 + anxiety * 0.01, 0.08 + anxiety * 0.2);
+  // Visual feedback: mandala rotation
+  if (mandala) {
+    const rotation = (Date.now() * 0.05) % 360;
+    mandala.style.transform = `rotate(${rotation}deg) scale(${1 + Math.sin(Date.now() * 0.001) * 0.05})`;
+    mandala.style.opacity = 0.1 + Math.random() * 0.05;
   }
 
-  const egoGone = !document.getElementById('ego');
-  const soulPurged = (window._recalc_soul === 0);
-
-  if (egoGone && soulPurged && !complete) {
-    complete = true;
-    _onSacrificeMade(engine);
+  // Fake API error noise in Network tab
+  fakeFetchTimer += dt;
+  if (fakeFetchTimer > 5) {
+    fetch('/api/v1/aetheris/purge_ego').catch(() => {});
+    fakeFetchTimer = 0;
   }
+
+  // Check if user deleted the #ego node
+  const stillExists = document.getElementById('ego');
+  if (!stillExists) {
+    if (window._recalc_soul === 0) {
+        complete = true;
+        _onComplete();
+    } else {
+        // Subtle hint if they only deleted the node but didn't set the soul
+        if (Math.random() > 0.99) {
+            logAetheris('warn', "REMAINS OF SELF DETECTED. RECALIBRATE SOUL TO ZERO.");
+        }
+    }
+  }
+
+  // Atmosphere
+  engine.setAnxiety(0.5);
 }
 
-function _onSacrificeMade(engine) {
-  const flash = document.createElement('div');
-  flash.style.cssText = `
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    background: white; z-index: 1000;
-  `;
-  document.body.appendChild(flash);
-
-  gsap.to(flash, { opacity: 0, duration: 4, onComplete: () => flash.remove() });
-
-  mandalaGroup.children.forEach(m => {
-    m.material.color.setHex(0xffffff);
-    m.material.wireframe = false;
-    m.material.transparent = true;
-    gsap.to(m.material, { opacity: 0, duration: 3 });
-    gsap.to(m.scale, { x: 5, y: 5, z: 5, duration: 3 });
+function _onComplete() {
+  logAetheris('liturgy');
+  gsap.to(overlay || document.getElementById('l6-tiferet'), { 
+    opacity: 0, 
+    duration: 3, 
+    onComplete: () => {
+      if (onComplete) onComplete();
+    }
   });
-
-  const instr = document.getElementById('l6-instruction');
-  if (instr) {
-    instr.innerText = translate("SACRIFICE ACCEPTED");
-    instr.style.color = "white";
-  }
-
-  setTimeout(() => {
-    if (onComplete) onComplete();
-  }, 4000);
 }
 
 function onExit(engine) {
-  if (observer) observer.disconnect();
-  const ego = document.getElementById('ego');
-  if (ego) ego.style.display = 'none';
   engine.overlay.innerHTML = '';
 }
 

@@ -52,10 +52,7 @@ html, body {
   height: 100%;
   z-index: 10;
   pointer-events: none;
-}
-
-#ui-overlay > * {
-  pointer-events: auto;
+  user-select: none;
 }
 
 /* === The Gate (Entry Screen) === */

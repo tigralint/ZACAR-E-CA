@@ -10,6 +10,7 @@ import { ZalgoSystem } from './zalgo.js';
 import { AudioEngine } from './audio-engine.js';
 import { StateManager } from './state-manager.js';
 import { Renderer } from './renderer.js';
+import { logAetheris } from './enochian.js';
 
 export class Engine {
   constructor() {
@@ -24,12 +25,18 @@ export class Engine {
     // Shared references levels can use
     this.overlay = document.getElementById('ui-overlay');
     this.cursor = null;
+
+    // --- ANALOG HORROR CORE ---
+    this.RITUAL_SEED = 14102023; // Seed for deterministic horror
+    this._fakeFetchTimer = 0;
   }
 
   /**
    * Initialize all systems. Must be called from a user gesture handler.
    */
   async init() {
+    // Start Kernel Logs
+    this._initKernelLogs();
     // Canvas
     const canvas = document.getElementById('void');
     this.renderer = new Renderer(canvas);
@@ -59,6 +66,24 @@ export class Engine {
 
     // Start Level 1
     await this.state.transitionTo(1, this);
+  }
+
+  _initKernelLogs() {
+    logAetheris('liturgy');
+    setInterval(() => {
+      if (Math.random() > 0.95) logAetheris('error');
+    }, 5000);
+  }
+
+  _spawnFakeFetch() {
+    const endpoints = [
+      '/api/v1/aetheris/soul_scan',
+      '/api/v1/kernel/mem_dump',
+      '/api/v1/ritual/sync_seed',
+      '/sys/core/purge_shadows'
+    ];
+    const url = endpoints[Math.floor(Math.random() * endpoints.length)];
+    fetch(url).catch(() => {}); // Intentional 404/500 noise in Network tab
   }
   /**
    * Initialize the Subtle Terror System.
@@ -216,6 +241,13 @@ export class Engine {
     }
 
     this._updateSubtleTerror(dt);
+    
+    this._fakeFetchTimer += dt;
+    if (this._fakeFetchTimer > 8) {
+      this._spawnFakeFetch();
+      this._fakeFetchTimer = 0;
+    }
+
     if (this.state.update) this.state.update(this, dt);
     if (this.renderer) this.renderer.render();
 

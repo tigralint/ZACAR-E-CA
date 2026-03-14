@@ -1,0 +1,315 @@
+/* === ZACAR-E-CA · Global Styles === */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --void: #050505;
+  --blood: #8b0000;
+  --ash: #1a1a1a;
+  --bone: #d4c5a9;
+  --glow: #ff2200;
+  --phosphor: #00ff41; /* Ghost Phosphor */
+  --gold: #ffd700;    /* Holy Gold */
+  --whisper: rgba(255, 255, 255, 0.03);
+  --font-mono: 'Share Tech Mono', monospace;
+  --font-serif: 'IM Fell English', serif;
+  --black-bile: rgba(10, 5, 5, 0.95);
+  --shadow-entity: rgba(0, 0, 0, 0.6);
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--void);
+  color: var(--bone);
+  font-family: var(--font-mono);
+  cursor: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* === Canvas === */
+#void {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+/* === UI Overlay === */
+#ui-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+#ui-overlay > * {
+  pointer-events: auto;
+}
+
+/* === The Gate (Entry Screen) === */
+#gate {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  background: var(--void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 1.5s ease;
+}
+
+#gate.opened {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* === Gate Refinement === */
+#gate::before {
+  content: 'Z̸̢̛̺̳A̸̡̧C̷̨̛A̷̢̡R̸̨̛-E̷̢̡-C̸̨̛A̷̢̡';
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 6vw, 5rem);
+  color: var(--gold);
+  letter-spacing: 0.5em;
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.3),
+    0 0 60px rgba(139, 0, 0, 0.2);
+  animation: flicker 4s infinite alternate;
+}
+
+#gate::after {
+  content: '⸸ SCRUTAMINI SCRIPTURAS ⸸';
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(212, 197, 169, 0.2);
+  margin-top: 4rem;
+  letter-spacing: 0.8em;
+  text-transform: uppercase;
+  animation: pulse-dim 5s infinite ease-in-out;
+}
+
+/* === Glassmorphism & Phosphor === */
+.glass-panel {
+  background: rgba(15, 10, 10, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 0, 0, 0.3);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.phosphor-text {
+  color: var(--phosphor);
+  text-shadow: 0 0 8px var(--phosphor);
+  font-family: var(--font-mono);
+}
+
+.gold-text {
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+@keyframes flicker {
+  0%, 90%, 100% { opacity: 1; transform: scale(1); }
+  91% { opacity: 0.4; transform: scale(0.99); }
+  92% { opacity: 0.9; transform: scale(1.01); }
+  93% { opacity: 0.3; transform: scale(0.98); }
+  94% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-dim {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* === Custom Cursor === */
+#custom-cursor {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--blood);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: difference;
+  transition: transform 0.1s ease;
+  box-shadow: 0 0 8px rgba(139, 0, 0, 0.4);
+}
+
+#custom-cursor::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
+  background: var(--glow);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* === Glitch Text === */
+.glitch {
+  position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch::before {
+  color: var(--blood);
+  animation: glitch-shift 2s infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+}
+
+.glitch::after {
+  color: var(--glow);
+  animation: glitch-shift 2s infinite reverse;
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+}
+
+@keyframes glitch-shift {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 1px); }
+  40% { transform: translate(2px, -1px); }
+  60% { transform: translate(-1px, 2px); }
+  80% { transform: translate(1px, -2px); }
+}
+
+/* === Scanlines Overlay === */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* === Level-specific utility classes === */
+.level-text {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--bone);
+  opacity: 0.7;
+}
+
+.level-text--blood {
+  color: var(--blood);
+  text-shadow: 0 0 10px rgba(139, 0, 0, 0.6);
+}
+
+.level-text--large {
+  font-family: var(--font-serif);
+  font-size: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+/* === Overlay CRT noise === */
+#noise-overlay {
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: noise-shift 0.2s steps(10) infinite;
+}
+
+@keyframes noise-shift {
+  0% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -5%); }
+  20% { transform: translate(3%, 7%); }
+  30% { transform: translate(-7%, 3%); }
+  40% { transform: translate(5%, -3%); }
+  50% { transform: translate(-3%, 5%); }
+  60% { transform: translate(7%, -7%); }
+  70% { transform: translate(-5%, 3%); }
+  80% { transform: translate(3%, -5%); }
+  90% { transform: translate(-7%, 7%); }
+}
+
+/* === Subtle Horror Effects === */
+
+/* Lingering Shadows - Entities that appear at edges */
+.watcher-entity {
+  position: fixed;
+  width: 100px;
+  height: 250px;
+  background: radial-gradient(ellipse at center, var(--shadow-entity) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 5;
+  filter: blur(20px);
+  opacity: 0;
+  transition: opacity 2s ease, transform 5s ease-in-out;
+}
+
+/* Weeping UI - Black liquid drips */
+.weeping {
+  position: relative;
+}
+
+.weeping::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 2px;
+  height: 0;
+  background: var(--black-bile);
+  box-shadow: 0 0 5px var(--black-bile);
+  animation: weep 10s infinite;
+  opacity: 0.6;
+}
+
+@keyframes weep {
+  0% { height: 0; opacity: 0; }
+  20% { height: 0; opacity: 0.6; }
+  80% { height: 100px; opacity: 0.3; }
+  100% { height: 150px; opacity: 0; }
+}
+
+/* Liturgical Text - Pulsing unholy glow */
+.liturgical {
+  font-family: var(--font-serif);
+  color: var(--bone);
+  text-shadow: 0 0 15px rgba(139, 0, 0, 0.2);
+  animation: liturgical-pulse 8s infinite;
+}
+
+@keyframes liturgical-pulse {
+  0%, 100% { text-shadow: 0 0 15px rgba(139, 0, 0, 0.2); transform: scale(1); }
+  50% { text-shadow: 0 0 25px rgba(139, 0, 0, 0.5); transform: scale(1.02); }
+}
